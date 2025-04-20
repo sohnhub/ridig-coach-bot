@@ -1,9 +1,9 @@
 // ✅ Vercel용 GPT + 날씨 기반 복장 추천 API Route
 // 위치: /api/weather-gpt.js
 
-import axios from 'axios';
+const axios = require('axios');
 
-export default async function handler(req, res) {
+module.export = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
