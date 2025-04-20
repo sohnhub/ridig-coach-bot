@@ -1,6 +1,3 @@
-// ✅ Vercel용 GPT + 날씨 기반 복장 추천 API Route
-// 위치: /api/weather-gpt.js
-
 const axios = require('axios');
 
 module.exports = async function handler(req, res) {
@@ -14,24 +11,36 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: '지역명이 없습니다.' });
   }
 
+  // ✅ 지역명 한글 → OpenWeather 도시명 매핑
+  const cityMap = {
+    "잠실": "Seoul,KR",
+    "강남": "Seoul,KR",
+    "서울": "Seoul,KR",
+    "부산": "Busan,KR",
+    "대구": "Daegu,KR",
+    "인천": "Incheon,KR",
+    "제주": "Jeju,KR",
+    "광주": "Gwangju,KR",
+    "수원": "Suwon,KR",
+    "대전": "Daejeon,KR",
+    "울산": "Ulsan,KR"
+  };
+
+  const mappedLocation = cityMap[location] || `${location},KR`;
+
   try {
-    
-    const weatherRes = await axios.get(
-      'https://api.openweathermap.org/data/2.5/weather',
-      {
-        params: {
-          q: location,
-          appid: process.env.OPENWEATHER_API_KEY,
-          units: 'metric',
-          lang: 'kr',
-        },
-      }
-    );
+    const weatherRes = await axios.get('https://api.openweathermap.org/data/2.5/weather', {
+      params: {
+        q: mappedLocation,
+        appid: process.env.OPENWEATHER_API_KEY,
+        units: 'metric',
+        lang: 'kr',
+      },
+    });
 
     const { temp } = weatherRes.data.main;
     const wind = weatherRes.data.wind.speed;
 
-    // 🧠 GPT 프롬프트 구성
     const prompt = `오늘 ${location}에서 자전거를 탈 예정이야. 현재 기온은 ${temp}도이고 풍속은 ${wind}m/s야. 어떤 복장을 입는 게 좋을까? 자전거 라이더 기준으로 실용적으로 조언해줘.`;
 
     const gptRes = await axios.post(
@@ -53,7 +62,6 @@ module.exports = async function handler(req, res) {
 
     const gptReply = gptRes.data.choices[0].message.content.trim();
 
-    // 🔁 카카오 오픈빌더 응답 포맷
     return res.status(200).json({
       version: '2.0',
       template: {
@@ -70,5 +78,5 @@ module.exports = async function handler(req, res) {
     console.error('API Error:', error);
     return res.status(500).json({ error: '서버 오류' });
   }
-}
+};
 
